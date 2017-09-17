@@ -16,7 +16,7 @@
 #endif
 module Data.Dependent.Sum where
 
-import Control.Applicative
+-- import Control.Applicative
 
 #if MIN_VERSION_base(4,7,0)
 import Data.Typeable (Typeable)
@@ -59,13 +59,13 @@ type family DSumC a :: Constraint
 -- is parsed as would be expected (@Rec ==> (AnInt ==> (3 + 4))@) and has type
 -- @DSum Identity Tag@.  Its precedence is just above that of '$', so
 -- @foo bar $ AString ==> "eep"@ is equivalent to @foo bar (AString ==> "eep")@.
-data DSum tag f = forall a. DSumC a =>  !(tag a) :=> f a
+data DSum c tag f = forall a. (c a) =>  !(tag a) :=> f a
 #if MIN_VERSION_base(4,7,0)
     deriving Typeable
 #endif
 infixr 1 :=>, ==>
 
-(==>) :: Applicative f => DSumC a => tag a -> a -> DSum tag f
+(==>) :: Applicative f => c a => tag a -> a -> DSum c tag f
 k ==> v = k :=> pure v
 
 -- |In order to make a 'Show' instance for @DSum tag f@, @tag@ must be able
@@ -103,7 +103,7 @@ instance Show (f a) => ShowTag (GOrdering a) f where
         . shows "type information lost into the mists of oblivion"
         )
 
-instance ShowTag tag f => Show (DSum tag f) where
+instance ShowTag tag f => Show (DSum c tag f) where
     showsPrec p (tag :=> value) = showParen (p >= 10)
         ( gshowsPrec 0 tag
         . showString " :=> "
@@ -184,7 +184,7 @@ class GEq tag => EqTag tag f where
 instance Eq (f a) => EqTag ((:=) a) f where
     eqTagged Refl Refl = (==)
 
-instance EqTag tag f => Eq (DSum tag f) where
+instance EqTag tag f => Eq (DSum c tag f) where
     (t1 :=> x1) == (t2 :=> x2)  = fromMaybe False $ do
         Refl <- geq t1 t2
         return (eqTagged t1 t2 x1 x2)
@@ -214,7 +214,7 @@ class (EqTag tag f, GCompare tag) => OrdTag tag f where
 instance Ord (f a) => OrdTag ((:=) a) f where
     compareTagged Refl Refl = compare
 
-instance OrdTag tag f => Ord (DSum tag f) where
+instance OrdTag tag f => Ord (DSum c tag f) where
     compare (t1 :=> x1) (t2 :=> x2)  = case gcompare t1 t2 of
         GLT -> LT
         GGT -> GT

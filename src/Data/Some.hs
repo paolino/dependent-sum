@@ -11,7 +11,6 @@ module Data.Some where
 
 import Data.GADT.Show
 import Data.GADT.Compare
-import Data.Maybe
 
 data Some tag where
     This :: !(tag t) -> Some tag
