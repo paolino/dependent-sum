@@ -5,6 +5,8 @@
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE MultiParamTypeClasses #-}
 {-# LANGUAGE TypeOperators #-}
+{-# LANGUAGE ConstraintKinds #-}
+{-# LANGUAGE TypeFamilies #-}
 {-# LANGUAGE CPP #-}
 #if defined(__GLASGOW_HASKELL__) && __GLASGOW_HASKELL__ >= 702
 {-# LANGUAGE Safe #-}
@@ -26,7 +28,10 @@ import Data.GADT.Show
 import Data.GADT.Compare
 
 import Data.Maybe (fromMaybe)
+import Data.Kind
 
+
+type family DSumC a :: Constraint
 -- |A basic dependent sum type; the first component is a tag that specifies 
 -- the type of the second;  for example, think of a GADT such as:
 -- 
@@ -54,13 +59,13 @@ import Data.Maybe (fromMaybe)
 -- is parsed as would be expected (@Rec ==> (AnInt ==> (3 + 4))@) and has type
 -- @DSum Identity Tag@.  Its precedence is just above that of '$', so
 -- @foo bar $ AString ==> "eep"@ is equivalent to @foo bar (AString ==> "eep")@.
-data DSum tag f = forall a. !(tag a) :=> f a
+data DSum tag f = forall a. DSumC a =>  !(tag a) :=> f a
 #if MIN_VERSION_base(4,7,0)
     deriving Typeable
 #endif
 infixr 1 :=>, ==>
 
-(==>) :: Applicative f => tag a -> a -> DSum tag f
+(==>) :: Applicative f => DSumC a => tag a -> a -> DSum tag f
 k ==> v = k :=> pure v
 
 -- |In order to make a 'Show' instance for @DSum tag f@, @tag@ must be able
@@ -142,7 +147,7 @@ instance Read (f a) => ReadTag ((:=) a) f where
 --         , con == "error "
 --         , (msg, rest') <- reads rest :: [(String, String)]
 --         ]
-
+{-
 instance ReadTag tag f => Read (DSum tag f) where
     readsPrec p = readParen (p > 1) $ \s -> 
         concat
@@ -154,7 +159,7 @@ instance ReadTag tag f => Read (DSum tag f) where
             , let (con, rest') = splitAt 5 rest
             , con == " :=> "
             ]
-
+-}
 -- |In order to test @DSum tag f@ for equality, @tag@ must know how to test
 -- both itself and its tagged values for equality.  'EqTag' defines
 -- the interface by which they are expected to do so.
