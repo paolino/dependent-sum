@@ -31,7 +31,6 @@ import Data.Maybe (fromMaybe)
 import Data.Kind
 
 
-type family DSumC a :: Constraint
 -- |A basic dependent sum type; the first component is a tag that specifies 
 -- the type of the second;  for example, think of a GADT such as:
 -- 
